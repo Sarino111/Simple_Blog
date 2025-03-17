@@ -68,14 +68,14 @@ export default function Page() {
     <>
       { isLoading || !article ? ( <LoadingComponent/> ) 
       : isError ? ( <ErrorComponent onRetry={handleRetry} /> ) : (
-        <main className="min-h-screen w-[80%] max-w-[1200px] mx-auto py-[3.5rem]">
+        <main className="min-h-screen w-[80%] max-w-[66rem] mx-auto py-[3.5rem]">
 
           <article className="space-y-8">
             {/* Header */}
             <header className="space-y-4 pt-[2rem] text-center">
               <h1 className="text-4xl font-bold">{article.title}</h1>
               {article.subtitle && (
-                <p className="text-xl text-gray-500">{article.subtitle}</p>
+                <p className="text-xl text-[#137773] font-[Now-Medium]">{article.subtitle}</p>
               )}
             </header>
 

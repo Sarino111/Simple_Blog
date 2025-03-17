@@ -46,6 +46,7 @@ export type ExtractDataBlog = {
     subtitle: string;
     category: string,
     created: string,
+    createdIso: string,
     image: string,
     content: string,
     userName: string,

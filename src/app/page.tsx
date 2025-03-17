@@ -4,7 +4,7 @@
 import React, { useEffect, useState } from "react";
 
 // utils
-import { getBlogData } from '@/utils/services/blog';
+import { getBlogDataAll } from '@/utils/services/blog';
 import{ extractDataBlog } from '@/utils/dataExtract';
 
 // context
@@ -21,18 +21,26 @@ import Pagination from "@/components/Pagination";
 
 export default function Page() {
   
-  const { dataBlog, setDataBlog, currentPage, setCurrentPage } = useBlogContext();
-  const [ isLoading, setIsLoading ] = useState(true);
+  const { dataBlog, currentDataPage, setDataBlog, currentPage, setCurrentPage, setCurrentDataPage } = useBlogContext();
+  const [ isLoading, setIsLoading ] = useState(false);
   const [ isError, setIsError ] = useState(false);
+  const articlesPerPage = 12;
 
-  const fetchBlogData = async (pageNum: number) => {
+  const fetchBlogData = async () => {
     setIsLoading(true);
 
     try {
-      const resp = await getBlogData(pageNum);
+      const resp = await getBlogDataAll();
       if (resp) {
-        const responseData = resp.data.map((blog: BlogData) => extractDataBlog(blog));
-        setDataBlog(responseData);
+        const responseData = resp.map((blog: BlogData) => extractDataBlog(blog));
+        const sortedArticles = responseData.sort((a: ExtractDataBlog, b: ExtractDataBlog) => {
+          const dateA = new Date(a.createdIso);
+          const dateB = new Date(b.createdIso);
+          return dateB.getTime() - dateA.getTime();
+      });
+        const first12Articles = sortedArticles.slice(0, 12);
+        setDataBlog(sortedArticles);
+        setCurrentDataPage(first12Articles);
         setIsError(false);
       }
     } catch (error) {
@@ -44,23 +52,51 @@ export default function Page() {
   };
 
   useEffect(() => {
-    fetchBlogData(currentPage);
-  }, [currentPage]);
+    if (currentDataPage.length === 0) fetchBlogData();
+  }, []);
 
   function handleRetry() {
-    fetchBlogData(currentPage);
+    fetchBlogData();
   }
 
-  function handleNextPage () {
-    setCurrentPage((prevPage) => prevPage + 1);
+  function handleNextPage() {
+    setCurrentPage((prevPage) => {
+      const newPage = prevPage + 1;
+      
+      const startIndex = (newPage - 1) * articlesPerPage;
+      const endIndex = newPage * articlesPerPage;
+      
+      const nextPageArticles = dataBlog.slice(startIndex, endIndex);
+      
+      setCurrentDataPage(nextPageArticles);
+
+      return newPage; 
+    });
   }
 
-  function handlePrevPage () {
-    setCurrentPage((prevPage) => prevPage - 1);
+  function handlePrevPage() {
+    setCurrentPage((prevPage) => {
+      if (prevPage > 1) {
+        const newPage = prevPage - 1;
+
+        const startIndex = (newPage - 1) * articlesPerPage;
+        const endIndex = newPage * articlesPerPage;
+        
+        const prevPageArticles = dataBlog.slice(startIndex, endIndex);
+        
+        setCurrentDataPage(prevPageArticles);
+
+        return newPage;  
+      }
+      return prevPage;
+    });
   }
  
   function handleFirstPage () {
     setCurrentPage(1);
+
+    const first12Articles = dataBlog.slice(0, 12);
+    setCurrentDataPage(first12Articles);
   }
 
   return (
@@ -68,7 +104,7 @@ export default function Page() {
       { isError ? ( <ErrorComponent onRetry={handleRetry}/> )
       : (
         <main className="min-h-screen w-full flex flex-col items-center justify-center my-[5rem]">
-          <h1 className="text-[#039993] text-[2rem] w-full text-center mb-[3rem]">
+          <h1 className="text-[#137773] text-[2rem] w-full text-center mb-[1.5rem]">
             Články na našom blogu
           </h1>
           <div
@@ -86,7 +122,7 @@ export default function Page() {
             { isLoading ? (
               <LoadingComponent/>
               ) : (
-                dataBlog?.map((blog: ExtractDataBlog) => (
+                currentDataPage?.map((blog: ExtractDataBlog) => (
                   <BlogBox
                     key={blog.id}
                     id={blog.id}
